@@ -1,0 +1,22 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  creationTimestamp: null
+  namespace: istio-system
+  name: istiocontrolplane-1-6-13
+spec:
+  addonComponents:
+    grafana:
+      enabled: true
+    kiali:
+      enabled: true
+  values:
+    global:
+      tracer:
+        zipkin:
+          address: jaeger-collector.observability:9411
+    kiali:
+      dashboard:
+        grafanaURL: http://grafana:3000
+        jaegerURL: http://jaeger-query.observability:16686
+

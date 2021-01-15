@@ -61,15 +61,36 @@ install-istio-1.3.3: kind-cluster set-helm-version check-context
 	kubectl get crds | grep 'istio.io' | wc -l; \
 	helm install istio/1.3.3/istio --name istio --namespace istio-system --set grafana.enabled=true --set global.tracer.zipkin.address=jaeger-collector.observability:9411 --set kiali.enabled=true --set "kiali.dashboard.jaegerURL=http://jaeger-query.observability:16686" --set "kiali.dashboard.grafanaURL=http://grafana:3000"; \
 	#kubectl label namespace istio-system istio-injection=enabled; 
-	#kubectl rollout restart deployment -n istio-system; 
-	curl -sL https://github.com/istio/istio/releases/download/1.3.3/istio-1.3.3-osx.tar.gz | tar zxv --strip-components=2 istio-1.3.3/bin/istioctl | mv istioctl istioctl1.3.3; \
+	#kubectl rollout restart deployment -n istio-system;
+	mkdir -p istio/1.3.3; \
+	curl -sL https://github.com/istio/istio/releases/download/1.3.3/istio-1.3.3-osx.tar.gz | tar zxv --strip-components=2 -C istio/1.3.3 istio-1.3.3/bin/istioctl
 	kubectl -n istio-system wait --for=condition=available --timeout=120s deployment --all; \
-	./istioctl1.3.3 ps
+	./istio/1.3.3/istioctl ps
 
 upgrade-to-istio-1.4.10: export env=local
-upgrade-to-istio-1.4.10:
+upgrade-to-istio-1.4.10: check-context
 	helm upgrade --install istio-init istio/1.4.10/istio-init --namespace istio-system; \
 	kubectl -n istio-system wait --for=condition=complete job --all; \
 	helm upgrade --install istio istio/1.4.10/istio --namespace istio-system --set grafana.enabled=true --set global.tracer.zipkin.address=jaeger-collector.observability:9411 --set kiali.enabled=true --set "kiali.dashboard.jaegerURL=http://jaeger-query.observability:16686" --set "kiali.dashboard.grafanaURL=http://grafana:3000"; \
-	curl -sL https://github.com/istio/istio/releases/download/1.4.10/istio-1.4.10-osx.tar.gz | tar zxv --strip-components=2 istio-1.4.10/bin/istioctl | mv istioctl istioctl1.4.10
-	./istioctl1.4.10 ps
+	mkdir -p istio/1.4.10; \
+	curl -sL https://github.com/istio/istio/releases/download/1.4.10/istio-1.4.10-osx.tar.gz | tar zxv --strip-components=2 -C istio/1.4.10 istio-1.4.10/bin/istioctl; \
+	./istio/1.4.10/istioctl ps
+
+generate-istio-1.6.13-operator-crd: export env=local
+generate-istio-1.6.13-operator-crd: check-context
+	./istio/1.6.13/istioctl manifest migrate istio-1.4.10.yaml > iop.yaml; \
+	./istio/1.6.13/istioctl operator init; \
+	echo "You may need to add a name to the IstioOperator crd manifest iop.yaml"
+
+upgrade-to-istio-1.6.13: export env=local
+upgrade-to-istio-1.6.13: check-context
+	kubectl patch deployment istio-galley -n istio-system --type "json" -p '[{"op":"add","path":"/spec/template/spec/containers/0/command/-","value":"--enable-validation=false"}]'; \
+	kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io istio-galley -n istio-system; \
+	helm get values istio > istio-1.4.10.yaml; \
+	mkdir -p istio/1.6.13; \
+	curl -sL https://github.com/istio/istio/releases/download/1.6.13/istio-1.6.13-osx.tar.gz | tar zxv --strip-components=2 -C istio/1.6.13 istio-1.6.13/bin/istioctl; \
+	./istio/1.6.13/istioctl manifest migrate istio-1.4.10.yaml > iop.yaml; \
+	./istio/1.6.13/istioctl operator init; \
+	kubectl -n istio-system wait --for condition=established --timeout=60s crd/ istiooperators.install.istio.io; \
+	./istio/1.6.13/istioctl ps
+
