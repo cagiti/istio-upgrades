@@ -16,7 +16,7 @@ Resources from the `istio` repoistory (_including resources from different versi
   a. you'll need to allow at least 8Gb memory
 2. [kind](https://kind.sigs.k8s.io/docs/user/quick-start/)
 3. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-4. [Helm v2](https://github.com/helm/helm/releases/tag/v2.17.0)
+4. [Helm v2](https://github.com/helm/helm/releases/tag/v2.17.0) supplied through [asdf](https://asdf-vm.com/)
 
 ### Steps
 
@@ -79,3 +79,40 @@ $ ./istio/1.6.13/istioctl dashboard kiali
 ```
 **E.g**
 ![Service Graph](./service_graph.png)
+
+
+## Useful commands during upgrade
+
+- ```kubectl get pods -n istio-system```
+- ```kubectl get pods -n istio-operator```
+- ```kubectl get pods -n default```
+- ```curl -s -o /dev/null -w %{http_code} http://127.0.0.1/productpage```
+
+### Istio 1.3.3
+
+- ```./istio/1.3.3/istioctl version```
+- ```./istio/1.3.3/istioctl ps```
+- ```./istio/1.3.3/istioctl verify-install```
+- ```./istio/1.3.3/istioctl dashboard kiali```
+
+### Istio 1.4.10
+
+- ```./istio/1.4.10/istioctl version```
+- ```./istio/1.4.10/istioctl ps```
+- ```./istio/1.4.10/istioctl dashboard kiali```
+
+### Istio 1.6.13
+
+- ```./istio/1.6.13/istioctl version```
+- ```./istio/1.6.13/istioctl ps```
+- ```./istio/1.6.13/istioctl analyze```
+- ```./istio/1.6.13/istioctl verify-install```
+- ```./istio/1.6.13/istioctl dashboard kiali```
+
+
+## References
+
+- https://istio.io/v1.3/docs/setup/install/helm/#option-2-install-with-helm-and-tiller-via-helm-install
+- https://istio.io/v1.4/docs/setup/upgrade/cni-helm-upgrade/
+- https://istio.io/v1.6/docs/setup/upgrade/#upgrading-from-1.4
+- https://github.com/istio/istio/tree/master/samples/bookinfo
