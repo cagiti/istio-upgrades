@@ -42,7 +42,7 @@ kind-cluster:
 	@if [ $(shell $(KIND) get clusters | grep -c $(CLUSTER_NAME)) -eq 0 ]; then \
 		$(KIND_WIH_EXPORTS) create cluster --name $(CLUSTER_NAME) --config $(KIND_CONFIG); \
 		kubectl create namespace istio-system; \
-		kubectl apply -f ./kiali.yaml -n istio-system; \
+		kubectl apply -f ./istio/kiali.yaml -n istio-system; \
 	fi
 
 rm-kind-cluster:
@@ -96,8 +96,8 @@ upgrade-to-istio-1.4.10: check-context
 
 generate-istio-1.6.13-operator-cr: export env=local
 generate-istio-1.6.13-operator-cr: check-context
-	helm get values istio > istio-1.4.10.yaml; \
-	./istio/1.6.13/istioctl manifest migrate istio-1.4.10.yaml > iop.yaml; \
+	helm get values istio > istio/1.4.10/istio-1.4.10.yaml; \
+	./istio/1.6.13/istioctl manifest migrate istio/1.4.10/istio-1.4.10.yaml > iop.yaml; \
 	./istio/1.6.13/istioctl operator init; \
 	echo "You may need to add a name to the IstioOperator crd manifest iop.yaml"
 
@@ -109,7 +109,7 @@ upgrade-to-istio-1.6.13: check-context
 	curl -sL https://github.com/istio/istio/releases/download/1.6.13/istio-1.6.13-osx.tar.gz | tar zxv --strip-components=2 -C istio/1.6.13 istio-1.6.13/bin/istioctl; \
 	./istio/1.6.13/istioctl operator init; \
 	kubectl -n istio-system wait --for condition=established --timeout=60s crd/istiooperators.install.istio.io; \
-	kubectl apply -f istiocontrolplane-1-6-13.yaml; \
+	kubectl apply -f ./istio/1.6.13/istiocontrolplane-1-6-13.yaml; \
 	kubectl label namespace default istio-injection- istio.io/rev=1-6-13; \
 	kubectl -n istio-system scale deployment/istio-citadel --replicas=0; \
 	kubectl -n istio-system scale deployment/istio-galley --replicas=0; \
@@ -120,10 +120,12 @@ upgrade-to-istio-1.6.13: check-context
 	kubectl -n istio-system scale deployment/grafana --replicas=0; \
 	kubectl -n istio-system scale deployment/kiali --replicas=0; \
 	kubectl -n istio-system scale deployment/prometheus --replicas=0; \
-	kubectl apply -f istiocontrolplane-1-6-13-addons.yaml; \
+	kubectl apply -f ./istio/1.6.13/istiocontrolplane-1-6-13-addons.yaml; \
 	kubectl rollout restart deployment --namespace default; \
 	kubectl -n istio-system wait --for=condition=available --timeout=240s deployment --all; \
 	kubectl -n default wait --for=condition=available --timeout=240s deployment --all; \
 	kubectl -n default wait --for=condition=ready --timeout=240s pod --all; \
+	sleep 120; \
+	kubectl -n istio-system wait --for=condition=ready --timeout=240s pod --all; \
 	kubectl -n istio-system patch service istio-ingressgateway --type='json' -p '[{"op":"replace","path":"/spec/ports/1/nodePort","value":31380},{"op":"replace","path":"/spec/ports/2/nodePort","value":31390}]'; \
 	./istio/1.6.13/istioctl version
