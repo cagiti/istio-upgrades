@@ -116,3 +116,11 @@ $ ./istio/1.6.13/istioctl dashboard kiali
 - https://istio.io/v1.4/docs/setup/upgrade/cni-helm-upgrade/
 - https://istio.io/v1.6/docs/setup/upgrade/#upgrading-from-1.4
 - https://github.com/istio/istio/tree/master/samples/bookinfo
+
+## Troubleshooting
+
+Should the bookinfo applications be unavailable when attempting to navigate to them via http://localhost/productpage then it might be that the nodePort has been updated within the `istio-ingressgateway` service within the `istio-system` namespace. Execute the following to update the nodePort values:
+
+```
+kubectl -n istio-system patch service istio-ingressgateway --type='json' -p '[{"op":"replace","path":"/spec/ports/1/nodePort","value":31380},{"op":"replace","path":"/spec/ports/2/nodePort","value":31390}]'
+```

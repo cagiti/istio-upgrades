@@ -125,5 +125,7 @@ upgrade-to-istio-1.6.13: check-context
 	kubectl -n istio-system wait --for=condition=available --timeout=240s deployment --all; \
 	kubectl -n default wait --for=condition=available --timeout=240s deployment --all; \
 	kubectl -n default wait --for=condition=ready --timeout=240s pod --all; \
+	sleep 120; \
+	kubectl -n istio-system wait --for=condition=ready --timeout=240s pod --all; \
 	kubectl -n istio-system patch service istio-ingressgateway --type='json' -p '[{"op":"replace","path":"/spec/ports/1/nodePort","value":31380},{"op":"replace","path":"/spec/ports/2/nodePort","value":31390}]'; \
 	./istio/1.6.13/istioctl version
